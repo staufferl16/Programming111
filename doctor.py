@@ -1,65 +1,102 @@
 """
 Author: Ken Lambert
+Edited By: Leigh Stauffer
+File: doctor.py
+Project 11
 
-This program simulates a session of non-directive psychotherapy.
-The program (doctor) prints a greeting and waits for the user
-(patient) to answer an initial question.  Each answer entered
-by the user results in a related reply by the program that
-continues the conversation.  When the user enters 'quit,' the
-program signs off with a goodbye.
+Softbot for a non-directive psychotherapist.
 """
 
-# Data structures for the program
-# These are usually defined early in a module
-
-qualifiers = ['Why do you say that ', 'You seem to think that ',
-              'Did I just hear you say that ']
-
-replacements = {'I':'you', 'me':'you', 'my':'your',
-                'we':'you', 'us':'you'}
-
-# imports and function definitions
-# Note how the functions collaborate to solve the problem
-
 import random
+import os.path
+
+class Doctor():
+
+    # All doctors share the same qualifiers, replacements, and hedges.
+
+    QUALIFIERS = ['Why do you say that ', 'You seem to think that ',
+                  'Did I just hear you say that ',
+                  'Why do you believe that ']
+
+    REPLACEMENTS = {'i': 'you', 'me': 'you', 'my': 'your',
+                    'we': 'you', 'us': 'you', 'am': 'are',
+                    'you': 'i', 'was':'were'}
+
+    HEDGES = ['Go on.', 'I would like to hear more about that.',
+              'And what do you think about this?', 'Please continue.']
+
+    # But each doctor keeps its own patient name and individual history.
+
+    def __init__(self, patientName):
+        """Loads history from a file, if it exists."""
+        self.patientName = patientName
+        self.history = []
+        fileName = self.patientName + '.txt'
+        if os.path.exists(fileName):
+            file = open(fileName, 'r')
+            self.history = file.read().split("\n")
+            file.close()
+
+    def greeting(self):
+        """Returns the doctor's greeting"""
+        return "Hello, " + self.patientName + \
+               ", how can I help you today?"
+
+    def farewell(self):
+        """Returns the doctor's farewell"""
+        self.saveHistory()
+        return "Have a nice day, " + self.patientName + "!"
+
+    def saveHistory(self):
+        """Saves the history to a file."""
+        fileName = self.patientName + '.txt'
+        file = open(fileName, 'w')
+        newHistory = '\n'.join(self.history)
+        file.write(newHistory)
+        file.close()
+
+    def reply(self, sentence):
+        """Returns the doctor's reply to sentence."""
+        choice = random.randint (1, 10)
+        if choice in (1, 2):
+            if len(self.history) > 3:
+                answer = 'Earlier you said that ' + \
+                self.change_person(random.choice(self.history))
+            else:
+                answer = random.choice(Doctor.HEDGES)
+        elif choice in range(3, 7):
+            answer = random.choice(Doctor.QUALIFIERS) + \
+            self.change_person(sentence) + "?"
+        else:
+            answer = random.choice(Doctor.HEDGES)
+        self.history.append(sentence)
+        return answer
+        
+    def change_person(self, sentence):
+        """Replaces pronouns so as to shift the address."""
+        oldlist = sentence.split()
+        newlist = []
+        for word in oldlist:
+            newlist.append(Doctor.REPLACEMENTS.get(word.lower(),
+                                                   word))
+        return " ".join(newlist)
 
 def main():
-    """
-    Main driver loop for the program.  Takes user's inputs
-    and prints replies until the user enters quit.
-    """
-    print('Good morning, how can I help you today?')
+    """Tester function for Doctor class.
+    The patient just presses enter to quit."""
+    patientName = input("Enter your first name: ")
+    doctor = Doctor(patientName)
+    print(doctor.greeting())
     while True:
-        sentence = input('> ')
-        if sentence.upper() == 'QUIT':
+        sentence = input("> ")
+        if sentence:
+            print(doctor.reply(sentence))
+        else:
+            print(doctor.farewell())
             break
-        print(reply(sentence))
-    print('Have a nice day!')
-
-def reply(sentence):
-    """
-    Generates and returns replies to user's sentences.
-    The current option is to change persons and prepend
-    an interrogatory qualifier.
-    """
-    return random.choice(qualifiers) + \
-           change_person(sentence)
-
-def change_person(sentence):
-    """
-    Returns a string representing the argument sentence
-    with the personal pronouns transformed.
-    """
-    oldlist = sentence.split()
-    newlist = []
-    for word in oldlist:
-        newlist.append(replacements.get(word, word))
-    return ' '.join(newlist)
 
 if __name__ == "__main__":
-    main()           
-            
-    
+    main()
 
     
         
